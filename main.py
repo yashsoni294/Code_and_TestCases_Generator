@@ -18,6 +18,7 @@ from Model_calling.openai_calling import get_conversation_openai
 from Utils_folder import utils
 from File_Insertion.insertion_script import write_markdown_file, write_word_file, write_text_file, improve_code_snippet, code_insertion, create_unique_folder, get_folder_details
 from User_story_processing.jira_integration import fetch_specific_stories
+from User_story_processing.jira_integration import extract_jira_details, fetch_user_story_acceptance_criteria
 
 app = FastAPI()
 
@@ -33,7 +34,7 @@ class JiraRequest(BaseModel):
     project_name: str
     sprint_name: str
     scrum_list: List[str]
-
+    
 # Enable CORS (Cross-Origin Resource Sharing)
 app.add_middleware(
     CORSMiddleware,
@@ -76,38 +77,16 @@ async def analyze_user_story(
 
     jira_details_obj = None
     if jira_details:
-        try:
-            jira_details_dict = json.loads(jira_details)
-            jira_details_obj = JiraRequest(**jira_details_dict)
-        except json.JSONDecodeError as e:
-            raise HTTPException(status_code=400, detail=f"Invalid JSON for jira_details: {str(e)}")
-        except Exception as e:
-            raise HTTPException(status_code=400, detail=f"Error parsing jira_details: {str(e)}")
+        jira_details_obj = extract_jira_details(jira_details)
     
     # Process Excel file if provided  
     if excel_file:
         user_story_acceptance_criteria = await excel_sheet_processing(excel_file)
-        print(user_story_acceptance_criteria)
     
     # Fetch from Jira if details are provided
     elif jira_details_obj:
-        print(jira_details_obj)
-        try:
-            stories = fetch_specific_stories(
-                jira_domain=jira_details_obj.jira_domain,
-                email=jira_details_obj.email,
-                api_token=jira_details_obj.api_token,
-                project_name=jira_details_obj.project_name,
-                sprint_name=jira_details_obj.sprint_name,
-                scrum_list=jira_details_obj.scrum_list
-            )
-            user_story_acceptance_criteria = "\n\n".join(
-                [f"Story: {story['summary']}\nAcceptance Criteria: {story['acceptance_criteria']}" for story in stories]
-            )
-            print(user_story_acceptance_criteria)
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e))
-    print(user_story_acceptance_criteria)
+        user_story_acceptance_criteria = fetch_user_story_acceptance_criteria(jira_details_obj)
+        logger.info(f"Fetched user story acceptance criteria from Jira: {user_story_acceptance_criteria}")
     try:
         if framework_test_cases == "ReactJs_Typescript":
             base_path = os.getenv("FRONTEND_BASE_FOLDER") + "/Code_folder"

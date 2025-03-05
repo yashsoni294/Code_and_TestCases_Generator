@@ -2,6 +2,18 @@ from requests.auth import HTTPBasicAuth
 import requests
 from typing import List
 from urllib.parse import quote
+import json
+from Logging_folder.logger_file import logger
+from pydantic import BaseModel
+from fastapi import HTTPException
+
+class JiraRequest(BaseModel):
+    jira_domain: str
+    email: str
+    api_token: str
+    project_name: str
+    sprint_name: str
+    scrum_list: List[str]
 
 def get_acceptance_criteria_field_id(jira_domain: str, email: str, api_token: str):
     auth = HTTPBasicAuth(email, api_token)
@@ -17,16 +29,14 @@ def get_acceptance_criteria_field_id(jira_domain: str, email: str, api_token: st
             return field.get("id")
     raise Exception("'Description' field not found!")
 
-
-def fetch_specific_stories(jira_domain: str, email: str, api_token: str, project_name: str, sprint_name: str, scrum_list: List[str]):
+def fetch_specific_stories(jira_domain: str, email: str, api_token: str, scrum_list: List[str]):
     try:
         acceptance_criteria_field = get_acceptance_criteria_field_id(jira_domain, email, api_token)
     except Exception as e:
         raise e
     
-    jql_query = (
-        f'project = "{project_name}" AND sprint = "{sprint_name}" AND issuekey in ({", ".join(scrum_list)})'
-    )
+    # Build JQL query for specified issue keys
+    jql_query = f'issuekey in ({", ".join(scrum_list)})'
     encoded_jql = quote(jql_query)
     
     auth = HTTPBasicAuth(email, api_token)
@@ -51,5 +61,34 @@ def fetch_specific_stories(jira_domain: str, email: str, api_token: str, project
         }
         stories.append(story)
     
+    # Sort stories by their issue key numerically
     stories.sort(key=lambda x: int(x['key'].split('-')[1]))
     return stories
+
+def extract_jira_details(jira_details):
+        try:
+            jira_details_dict = json.loads(jira_details)
+            jira_details_obj = JiraRequest(**jira_details_dict)
+            return jira_details_obj
+        except json.JSONDecodeError as e:
+            logger.error(f"Invalid JSON for jira_details: {str(e)}")
+            raise HTTPException(status_code=400, detail=f"Invalid JSON for jira_details: {str(e)}")
+        except Exception as e:
+            logger.error(f"Error parsing jira_details: {str(e)}")
+            raise HTTPException(status_code=400, detail=f"Error parsing jira_details: {str(e)}")
+        
+def fetch_user_story_acceptance_criteria(jira_details_obj):
+        try:
+            stories = fetch_specific_stories(
+                jira_domain=jira_details_obj.jira_domain,
+                email=jira_details_obj.email,
+                api_token=jira_details_obj.api_token,
+                scrum_list=jira_details_obj.scrum_list
+            )
+            user_story_acceptance_criteria = "\n\n".join(
+                [f"Story: {story['summary']}\nAcceptance Criteria: {story['acceptance_criteria']}" for story in stories]
+            )
+            return user_story_acceptance_criteria
+        except Exception as e:
+            logger.error(f"Error fetching stories from Jira: {str(e)}")
+            raise HTTPException(status_code=500, detail=str(e))

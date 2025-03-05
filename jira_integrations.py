@@ -25,6 +25,7 @@ def get_acceptance_criteria_field_id(jira_domain: str, email: str, api_token: st
     
     fields = response.json()
     for field in fields:
+        print(field.get("name"))
         if field.get("name") == "Description":
             return field.get("id")
     raise Exception("'Description' field not found!")
