@@ -3,13 +3,6 @@
 # import json
 # from urllib.parse import quote
 
-# # Replace these with your details
-# JIRA_DOMAIN = "samta-team.atlassian.net"  # e.g., "mycompany.atlassian.net"
-# EMAIL = "hrishabh.dubey@samta.ai"
-# API_TOKEN = "ATATT3xFfGF0dgAwIepKIuosoTuX23AlGhP23bTE3Ze9qawbpKeIT9OcGs79IzJwDUHyq-aAQj4OtHh1waPPA-L0iEvGpI-NgC-mEbHwpKauLdiLiQEMGtTc94ixepSUq89WOj6Pi5diAzHbQ5zJrsp0SRWyG4jJHqSGy_DHGZwkzSaeoz4FVe4=1189F397"
-# PROJECT_NAME = "My Scrum Project"
-# SPRINT_NAME = "Sprint 1"
-# ISSUE_KEYS = ["SCRUM-23", "SCRUM-24", "SCRUM-25", "SCRUM-26"]  # Focus on these keys
 
 # auth = HTTPBasicAuth(EMAIL, API_TOKEN)
 
