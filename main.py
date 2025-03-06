@@ -1,13 +1,11 @@
 from fastapi import FastAPI, HTTPException, Form, UploadFile, File
 from typing import Optional
-from urllib.parse import quote
 from fastapi.responses import JSONResponse
 from User_story_processing.user_story_logics import excel_sheet_processing
 from fastapi.middleware.cors import CORSMiddleware
 import uuid
 import os
 import openai
-from User_story_processing.user_story_logics import excel_sheet_processing
 from dotenv import load_dotenv
 from Templates import prompt_templates
 import base64
@@ -15,7 +13,6 @@ from Logging_folder.logger_file import logger
 from Model_calling.openai_calling import get_conversation_openai
 from Utils_folder import utils
 from File_Insertion.insertion_script import write_markdown_file, write_word_file, write_text_file, improve_code_snippet, code_insertion, create_unique_folder, get_folder_details
-from User_story_processing.jira_integration import fetch_specific_stories
 from User_story_processing.jira_integration import extract_jira_details, fetch_user_story_acceptance_criteria
 
 app = FastAPI()
@@ -30,8 +27,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # Allows all origins for development
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["*"], # Allows all methods for development
+    allow_headers=["*"], # Allows all headers for development
 )
 
 @app.post("/analyze-story/", summary="Analyze user story", response_description="Analysis results of the user story")
@@ -88,6 +85,7 @@ async def analyze_user_story(
     # Process Excel file if provided  
     if excel_file:
         user_story_acceptance_criteria = await excel_sheet_processing(excel_file)
+        logger.info(f"Fetched user story acceptance criteria from Excel sheet: {user_story_acceptance_criteria}")
     
     # Fetch from Jira if details are provided
     elif jira_details_obj:
@@ -363,7 +361,7 @@ async def analyze_user_story(
             }
 
     except Exception as e:
-        logger.error(f"HTTP Exception: {e.detail}")
+        logger.exception(f"HTTP Exception: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/download-zip/",  summary="Download zip file")
@@ -404,12 +402,12 @@ async def download_zip(file_path: str) -> JSONResponse:
 
     except HTTPException as e:
         # Log the error and re-raise already handled HTTP exceptions.
-        logger.error(f"HTTP Exception: {e.detail}")
+        logger.exception(f"HTTP Exception: {e.detail}")
         raise
 
     except PermissionError as e:
         # Log the permission error and raise an HTTP 403 Forbidden error.
-        logger.error(f"Permission Error: {e}")
+        logger.exception(f"Permission Error: {e}")
         raise HTTPException(
             status_code=403,
             detail="Permission denied for file access"
@@ -417,7 +415,7 @@ async def download_zip(file_path: str) -> JSONResponse:
 
     except Exception as e:
         # Log any unexpected error and raise an HTTP 500 Internal Server Error.
-        logger.error(f"Unexpected error: {str(e)}")
+        logger.exception(f"Unexpected error: {str(e)}")
         raise HTTPException(
             status_code=500,
             detail=f"Unexpected error: {str(e)}"
@@ -425,12 +423,29 @@ async def download_zip(file_path: str) -> JSONResponse:
     
 @app.post("/preview-directory/",  summary="Gives a preview of the directory")
 async def preview_directory(directory_path: str) -> JSONResponse:
+    """
+    Retrieves a preview of the specified directory.
+
+    This endpoint provides details about the contents of a given directory, 
+    such as files and subdirectories.
+
+    Args:
+        directory_path (str): The absolute or relative path of the directory to preview.
+
+    Returns:
+        JSONResponse: A JSON response containing the directory details.
+
+    Raises:
+        HTTPException (400): If the request contains invalid data.
+        HTTPException (500): If an unexpected error occurs.
+    """
     try:
         return get_folder_details(directory_path)
 
     except HTTPException as he:
+        logger.exception(he)
         raise he
     except Exception as e:
-        logger.error(f"Unexpected error: {(e)}")
+        logger.exception(f"Unexpected error: {(e)}")
         raise HTTPException(status_code=500, detail="Internal server error")
   

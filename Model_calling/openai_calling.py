@@ -38,5 +38,5 @@ def get_conversation_openai(template, model="gpt-4o-mini", temperature=0.01, max
         # Extract and return the content of the response
         return response.choices[0].message.content
     except Exception as e:
-        logger.error(f"An error occurred while interacting with the OpenAI model: {e}")
+        logger.exception(f"An error occurred while interacting with the OpenAI model: {e}")
         return f"An error occurred: {e}"

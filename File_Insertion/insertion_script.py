@@ -31,12 +31,12 @@ def write_markdown_file(full_path: str, api_contract: str) -> None:
     # Handle permission errors during file writing
     except PermissionError as e:
         # Log the permission error with additional context
-        logger.error(f"Permission denied when trying to write to {full_path}. You need elevated privileges. Error: {e}.")
+        logger.exception(f"Permission denied when trying to write to {full_path}. You need elevated privileges. Error: {e}.")
     
     # Handle any other unexpected exceptions
     except Exception as e:
         # Log the exception with the file path and error details
-        logger.error(f"An unexpected error occurred while writing to {full_path}: {e}.")
+        logger.exception(f"An unexpected error occurred while writing to {full_path}: {e}.")
 
 def write_word_file(full_path: str, api_contract: str) -> None:
     """
@@ -62,10 +62,10 @@ def write_word_file(full_path: str, api_contract: str) -> None:
         logger.info(f"Successfully written API contract in Word(.docx) file to {full_path}.")
     except PermissionError as e:
         # Handle permission errors, e.g., when the program doesn't have write access to the directory
-        logger.error("Permission denied. You need elevated privileges to write to the desired folder. - {e}")
+        logger.exception("Permission denied. You need elevated privileges to write to the desired folder. - {e}")
     except Exception as e:
         # Handle any other exceptions that might occur during the process
-        logger.error("An unexpected error occurred while writing the Word file. - {e}")
+        logger.exception("An unexpected error occurred while writing the Word file. - {e}")
 
 def write_text_file(full_path: str, gen_code: str) -> None:
     """
@@ -91,11 +91,11 @@ def write_text_file(full_path: str, gen_code: str) -> None:
     
     except PermissionError:
         # Log an error if there is a permission issue when writing the file.
-        logger.error("Permission denied: You need elevated privileges to write to the root folder.")
+        logger.exception("Permission denied: You need elevated privileges to write to the root folder.")
     
     except Exception as e:
         # Log any other exception that occurs during the file write operation.
-        logger.error(f"An error occurred: {e}")
+        logger.exception(f"An error occurred: {e}")
 
 def improve_code_snippet(gen_code: str, base_path: str) -> str:
     """
@@ -198,14 +198,14 @@ def code_insertion(improved_gen_code: str, base_path: str) -> None:
                 # Create the directory structure if it doesn't exist.
                 os.makedirs(dir_name)
             except OSError as e:
-                logger.error(f"Error creating directory '{dir_name}': {e}")
+                logger.exception(f"Error creating directory '{dir_name}': {e}")
 
         # Write the extracted code content to the file.
         try:
             with open(file_path, "w", encoding="utf-8") as file:
                 file.write(code_content)
         except Exception as e:
-            logger.error(f"Error writing to file '{file_path}': {e}")
+            logger.exception(f"Error writing to file '{file_path}': {e}")
 
     logger.info("Successfully inserted the generated code into the respective files and directories.")
 
@@ -292,6 +292,6 @@ def get_folder_details(root_path):
                         content = content.replace("'", '"')
                         file_contents[file_path] = content  # Store content in dictionary.
                 except Exception as e:
-                    logger.error(f"Error reading {file_path}: {e}")
+                    logger.exception(f"Error reading {file_path}: {e}")
     logger.info("Successfully fetched content and file paths from the folders.")
     return file_contents  # Return the collected file content dictionary.

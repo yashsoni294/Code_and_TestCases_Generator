@@ -23,5 +23,5 @@ async def excel_sheet_processing(excel_file):
         return user_story_acceptance_criteria
     
     except Exception as e:
-        logger.error(e)
+        logger.exception(e)
         raise HTTPException(status_code=500, detail=f"Error processing file: {str(e)}")
