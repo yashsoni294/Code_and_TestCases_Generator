@@ -1,10 +1,8 @@
 from fastapi import FastAPI, HTTPException, Form, UploadFile, File
-from pydantic import BaseModel
-from typing import List, Optional
+from typing import Optional
 from urllib.parse import quote
 from fastapi.responses import JSONResponse
 from User_story_processing.user_story_logics import excel_sheet_processing
-import json
 from fastapi.middleware.cors import CORSMiddleware
 import uuid
 import os
@@ -26,14 +24,6 @@ app = FastAPI()
 load_dotenv()
 API_KEY = os.getenv("OPENAI_API_KEY")
 openai.api_key = API_KEY
-
-class JiraRequest(BaseModel):
-    jira_domain: str
-    email: str
-    api_token: str
-    project_name: str
-    sprint_name: str
-    scrum_list: List[str]
     
 # Enable CORS (Cross-Origin Resource Sharing)
 app.add_middleware(
@@ -51,28 +41,44 @@ async def analyze_user_story(
     jira_details: Optional[str] = Form(None),
     framework_test_cases: str = Form(...)) -> JSONResponse:
     """
-    Analyzes a user story based on the specified development framework and generates corresponding files 
-    and folder structures. The function processes the user story and its acceptance criteria, generates 
-    necessary API contracts, code (for frameworks like ReactJS, FastAPI, Django, etc.), and creates 
-    organized file structures in the specified format.
+    Analyze a user story and generate relevant artifacts based on the selected framework.
+
+    This endpoint processes a user story and its acceptance criteria from various sources 
+    (user input, Excel file, or Jira). It then generates relevant outputs based on the selected 
+    framework, such as API contracts, test cases, or code files.
 
     Args:
-        user_story (str): A string containing the user story to be analyzed.
-        framework (str): The development framework (e.g., ReactJs_Typescript, Test_cases_Generation, 
-                          FastAPI, Django) to be used for analysis and code generation.
+        user_story_acceptance_criteria (Optional[str]): The acceptance criteria of the user story.
+        excel_file (Optional[UploadFile]): An Excel file containing the user story details.
+        jira_details (Optional[str]): Jira details to fetch the user story acceptance criteria.
+        framework_test_cases (str): The target framework or test case generation option. 
+            - "ReactJs_Typescript": Generates ReactJS + TypeScript frontend code.
+            - "Test_cases_Generation": Generates test cases.
+            - "FastAPI": Generates FastAPI-based backend code.
+            - "Django": Generates Django-based backend code.
 
     Returns:
-        dict: A dictionary containing the message, path to the generated zip file (`zip_path`), and 
-              the folder path (`folder_path`) where the files are stored.
+        JSONResponse: A JSON object containing:
+            - message (str): Success message indicating the generated output.
+            - folder_path (str): The path where generated files are stored.
+            - zip_path (str): Path to the ZIP file containing the generated files.
 
     Raises:
-        HTTPException: If an error occurs during processing, an HTTPException is raised with status code 500.
-    
-    Summary:
-        - The user story is analyzed based on the provided framework.
-        - Files such as API contracts, generated code, and test cases are created in various formats (e.g., .md, .docx, .xlsx, .txt).
-        - A zip file containing the generated files and folder structure is created and returned.
+        HTTPException: Returns a 500 error if an exception occurs during processing.
+
+    Processing Steps:
+    1. Extracts the user story acceptance criteria from the given source.
+    2. If "ReactJs_Typescript" is selected:
+        - Generates API contracts, writes them to Markdown/Word files.
+        - Generates ReactJS code, improves it, and structures it in folders.
+    3. If "Test_cases_Generation" is selected:
+        - Generates test cases from the user story and writes them to Excel/Markdown.
+    4. If "FastAPI" or "Django" is selected:
+        - Generates backend code with API contracts and structures the output.
+    5. Creates a ZIP archive of the generated files and returns its path.
+
     """
+    # Create a unique id for creteing unique folder name.
     unique_id = uuid.uuid4().hex
 
     jira_details_obj = None
