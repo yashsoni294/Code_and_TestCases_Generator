@@ -230,8 +230,6 @@ def create_unique_folder(base_path: str, unique_id) -> str:
     
     return unique_folder
 
-
-
 def get_folder_details(root_path):
     """
     Traverse a folder structure starting from the given root path and collect 

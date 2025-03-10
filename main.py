@@ -12,8 +12,15 @@ import base64
 from Logging_folder.logger_file import logger
 from Model_calling.openai_calling import get_conversation_openai
 from Utils_folder import utils
-from File_Insertion.insertion_script import write_markdown_file, write_word_file, write_text_file, improve_code_snippet, code_insertion, create_unique_folder, get_folder_details
-from User_story_processing.jira_integration import extract_jira_details, fetch_user_story_acceptance_criteria
+from User_story_processing.jira_integration import (extract_jira_details, 
+                                                    fetch_user_story_acceptance_criteria)
+from File_Insertion.insertion_script import (write_markdown_file, 
+                                             write_word_file, 
+                                             write_text_file, 
+                                             improve_code_snippet, 
+                                             code_insertion, 
+                                             create_unique_folder, 
+                                             get_folder_details)
 
 app = FastAPI()
 
@@ -31,7 +38,7 @@ app.add_middleware(
     allow_headers=["*"], # Allows all headers for development
 )
 
-@app.post("/analyze-story/", summary="Analyze user story", response_description="Analysis results of the user story")
+@app.post("/analyze-story/")
 async def analyze_user_story(
     user_story_acceptance_criteria: Optional[str] = Form(None),
     excel_file: Optional[UploadFile] = File(None),
@@ -91,6 +98,7 @@ async def analyze_user_story(
     elif jira_details_obj:
         user_story_acceptance_criteria = fetch_user_story_acceptance_criteria(jira_details_obj)
         logger.info(f"Fetched user story acceptance criteria from Jira: {user_story_acceptance_criteria}")
+    
     try:
         if framework_test_cases == "ReactJs_Typescript":
             base_path = os.getenv("FRONTEND_BASE_FOLDER") + "/Code_folder"

@@ -1,6 +1,9 @@
 # Ignore the virtual environment directory
 myenv/
 
+# Ignore the Generated Files and Folders directory
+Full_Stack_Generation/
+
 # Ignore environment variable files
 .env
 
